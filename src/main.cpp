@@ -107,6 +107,7 @@ int main()
           double m_py = j[1]["y"];
           double psi =  j[1]["psi"];
           double v = j[1]["speed"];
+          
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -144,7 +145,7 @@ int main()
           }
           Eigen::Vector3d Mp;
           Mp << m_px, m_py, 1;
-          Eigen::Vector3d Vp = T.inverse()*Mp;
+          //Eigen::Vector3d Vp = T.inverse()*Mp;
           //std::cout << "Vp " << Vp <<std::endl;
           
           // px, px in vehicle CS
@@ -166,14 +167,13 @@ int main()
           // 2. calculate cost function CTE and EPSI
           double cte = polyeval(coeffs, 0.);
           double epsi = -atan(coeffs[1]);
-
+          
           // 3. Update the controller based on the CTE
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
           
           // MPC Solve return a vector of actuators delta, and acceleration
           MpcSolution mpc_sol = mpc.Solve(state, coeffs);
-          int n =2;
           double scale_factor = 0.436332;  //25 deg = 0.436332 rad
           
           //std::cout << "DEBUG3, rad: " <<vars[0]<<" " << vars[1]<<" " << vars[2]<<" " << vars[3]<<" " << vars[4]<<" " << vars[5]<< std::endl;
@@ -183,7 +183,7 @@ int main()
           // So when the optimizer outputs a positive delta angle, that means the car is supposed to steer left. 
           // But in order to tell the simulator to steer left, you need to give it a negative value.
           // The simulator takes as input values in [-1, 1], where -1 is equivalent to 25 degrees to the left and 1 is equivalent to 25 degrees to the right.
-          double weight = 4.;
+
           steer_value = -1 * mpc_sol.delta / scale_factor;
           throttle_value = mpc_sol.a;
           // DEBUG
