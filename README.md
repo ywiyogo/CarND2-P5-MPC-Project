@@ -20,7 +20,7 @@ The step-by-step implementation of this project is:
 ## Coordinate System Transformation
 
 ## Calculating the Cross Track Error (CTE) and orientation error
-The CTE can be calculated by finding the shortest distance between the given waypoints to the position of the vehicle. However, this method is rather complicated. Thus, we convert the polynomial in the vehicle coordinate system and calculate the distance by assigning 0 to the function. The y value of the f(0) represents the distance as the below illustration.
+The CTE can be calculated by finding the shortest distance between the given waypoints to the position of the vehicle. However, this method is rather complicated. Thus, we convert the polynomial in the vehicle coordinate system and calculate the distance by assigning 0 to the function. The y value of the `f(0)` represents the distance as the below illustration.
 
 ![image1]
 
@@ -51,7 +51,7 @@ The cost function is depends to the length `N`. It is defined as a sum of many p
                    cte[n]² +
                    epsi[n]² +
                    delta[n]² +
-                   w_1 * a[n]² +
+                   w_a * a[n]² +
                    w_d * (delta[n+1]-delta[n])² +
                    (a[n+1]-a[n])²}
 
