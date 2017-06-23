@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<CodeLite_Project Name="CarND2-P5-MPC" Version="10.0.0" InternalType="">
+<CodeLite_Project Name="CarND2-P5-MPC-Project" Version="10.0.0" InternalType="">
   <Plugins>
     <Plugin Name="qmake">
       <![CDATA[00010001N0005Debug000000000000]]>
@@ -1504,7 +1504,7 @@
   </VirtualDirectory>
   <Description/>
   <Dependencies/>
-  <VirtualDirectory Name="CarND2-P5-MPC">
+  <VirtualDirectory Name="CarND2-P5-MPC-Project">
     <File Name="DATA.md"/>
     <File Name="install_ipopt.sh"/>
     <File Name="README.md"/>
@@ -1552,7 +1552,7 @@
         <SingleFileCommand/>
         <MakefileGenerationCommand/>
         <ThirdPartyToolName>None</ThirdPartyToolName>
-        <WorkingDirectory>/work/yudacity/CarND2-P5-MPC</WorkingDirectory>
+        <WorkingDirectory>/work/yudacity/CarND2-P5-MPC-Project</WorkingDirectory>
       </CustomBuild>
       <AdditionalRules>
         <CustomPostBuild/>

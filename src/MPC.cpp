@@ -9,17 +9,7 @@ using CppAD::AD;
 const size_t N = 10;
 const double dt = 0.1;
 
-// This value assumes the model presented in the classroom is used.
-//
-// It was obtained by measuring the radius formed by running the vehicle in the
-// simulator around in a circle with a constant steering angle and velocity on a
-// flat terrain.
-//
-// Lf was tuned until the the radius formed by the simulating the model
-// presented in the classroom matched the previous radius.
-//
-// This is the length from front to CoG that has a similar radius.
-const double Lf = 2.67;
+
 // Both the reference cross track and orientation errors are 0.
 // The reference velocity is set to 40 mph.
 double ref_v = 40;
@@ -58,12 +48,12 @@ class FG_eval
     // fg[1] contains the initial states
     // fg[1+t] contains the values based on the predicted model
     double w_a = 5;
-    double w_delta = 500;
+    double w_d = 500;
     // Calculate the cost based on the reference states: cte, epsi, and velocity.
     for(unsigned int t = 0; t < N; t++) {
+      fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
       fg[0] += CppAD::pow(vars[cte_start + t], 2);
       fg[0] += CppAD::pow(vars[epsi_start + t], 2);
-      fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
 
     // Minimize the use of actuators.
@@ -74,7 +64,7 @@ class FG_eval
 
     // Minimize the value gap between sequential actuations.
     for(unsigned int t = 0; t < N - 2; t++) {
-      fg[0] += w_delta * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += w_d * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
       fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
 
@@ -259,9 +249,7 @@ MpcSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 
   // Cost
   auto cost = solution.obj_value;
-
-  std::cout << "-----------------\nCost: " << cost << "\n-----------------\n" << std::endl;
-  std::cout << "Solution: " << solution.x << std::endl;
+  //std::cout << "Solution: " << solution.x << std::endl;
 
   // YW: Return the predicted positions and the first value of delta and accelerator
 
@@ -276,5 +264,6 @@ MpcSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   // due to the latency we return the latency element
   res.delta = solution.x[delta_start];
   res.a = solution.x[a_start];
+  res.cost = cost;
   return res;
 }

@@ -2,7 +2,73 @@
 Self-Driving Car Engineer Nanodegree Program
 
 ---
+## Project Description
+In this project we will implement Model Predictive Control to drive the car around the track. This time however we're not given the cross track error (CTE), we'll have to calculate that ourself! Additionally, there's a 100 millisecond latency between actuations commands on top of the connection latency.
 
+## Implementation
+The step-by-step implementation of this project is:
+1. Create the transformation matrix for mapping 2 CS 
+2. Fit the polynomial to the given points from the simulator
+3. Calculate CTE and orientation error (epsi)
+4. Determine the vehicle model for MPC and set the initial state
+5. Findout the best cost function and parameter values for `N` and `dt`
+6. Include the 100 ms latency to the model
+7. Call the MPC Solve return vectors of the predicted points, actuators delta, and acceleration
+8. Assigning the actuator values to the simulator
+
+
+## Coordinate System Transformation
+
+## Calculating the Cross Track Error (CTE) and orientation error
+The CTE can be calculated by finding the shortest distance between the given waypoints to the position of the vehicle. However, this method is rather complicated. Thus, we convert the polynomial in the vehicle coordinate system and calculate the distance by assigning 0 to the function. The y value of the f(0) represents the distance as the below illustration.
+
+![image1]
+
+## MPC
+
+### Vehicle Model
+The MPC uses the Constant Rate of Turn & Velocity model (CRTV) for the vehicle model. The state of this model is defined as:
+
+    x_[t+1] = x[t] + v[t] * cos(psi[t]) * dt
+    y_[t+1] = y[t] + v[t] * sin(psi[t]) * dt
+    psi_[t+1] = psi[t] + v[t] / Lf * delta[t] * dt
+    v_[t+1] = v[t] + a[t] * dt
+    cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+    epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
+
+where,
+* x and y refers to the position of the vehicle,
+* psi denotes the direction or orientation of the vehicle,
+* v refers to the velocity of the vehicle,
+* cte refers to the cross-track-error,
+* epsi is the orientation error.
+
+### Cost Function
+
+The cost function is depends to the length `N`. It is defined as a sum of many parameters:
+
+    cost = sum_N { (v[n]-v_ref[n])² + 
+                   cte[n]² +
+                   epsi[n]² +
+                   delta[n]² +
+                   w_1 * a[n]² +
+                   w_d * (delta[n+1]-delta[n])² +
+                   (a[n+1]-a[n])²}
+
+I include two weights (`w_a` and `w_d`) for the acceleration and the heading direction to emphasize these parameters. The `w2` helps me to deal with the sharp curve.
+
+### Prediction Horizon
+The predicted horizon is defined by the time `T = N*dt`. A short horizon leads the prediction to be less accurate or even instability. A long time of prediction provides a better prediction, but it reduces the performance. I apply `N=10` and `dt=0.1` for my MPC in order to deal with the maximal velocity 40 mph.
+
+### Latency
+Due to the 100 millisecond latency between actuations commands on top of the connection latency, we need to incorporate this latency to our model. One way is to include this latency in the state before the state is passed to the `MPC::solve()`. The updated state is defined in the function `include_latency` as:
+
+    s[0] = x + v * cos(psi) * latency;
+    s[1] = y + v * sin(psi) * latency;
+    s[2] = psi + v / Lf * delta * latency;
+    s[3] = v + acc * latency;
+
+---
 ## Dependencies
 
 * cmake >= 3.5
@@ -85,31 +151,11 @@ for instructions and the project rubric.
 * You don't have to follow this directory structure, but if you do, your work
   will span all of the .cpp files here. Keep an eye out for TODOs.
 
-## Call for IDE Profiles Pull Requests
+## IDE
 
-Help your fellow students!
+For this project, I use the codelite IDE. To import this project in codelite, please import the project file *CarND2-P5-MPC-Project.project*.
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+[//]: # (Image References)
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+[image1]: ./img/cte_calc.png "Calculating CTE"

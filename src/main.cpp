@@ -1,6 +1,6 @@
 #include "Eigen-3.3/Eigen/Core"
+#include "Eigen-3.3/Eigen/LU" // for Eigen inverse()
 #include "Eigen-3.3/Eigen/QR"
-#include "Eigen-3.3/Eigen/LU"   // for Eigen inverse()
 #include "MPC.h"
 #include "json.hpp"
 #include <chrono>
@@ -77,6 +77,53 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals, int order)
   return result;
 }
 
+// Create a transformation Matrix to transform given points to vehicle CS
+void transformMap2Vehicle(vector<double> v_pos_in_map,
+    const double psi,
+    const vector<double> m_ptsx,
+    const vector<double> m_ptsy,
+    vector<double>& v_ptsx,
+    vector<double>& v_ptsy)
+{
+  Eigen::Matrix3d T;
+
+  T << cos(psi), -sin(psi), v_pos_in_map[0],
+       sin(psi), cos(psi), v_pos_in_map[1],
+       0, 0, 1;
+
+  // Transform the waypoints from map to vehicle CS
+  unsigned int wp_len = m_ptsx.size();
+  if(v_ptsx.size() != wp_len) {
+    v_ptsx.resize(wp_len);
+    v_ptsy.resize(wp_len);
+  }
+  std::cout << "Length of ptsx: " << wp_len << std::endl;
+  // std::cout << "T: \n" << T << std::endl;
+  // std::cout << "T.inverse \n " << T.inverse() << std::endl;
+
+  for(unsigned int i = 0; i < wp_len; i++) {
+    Eigen::Vector3d M;
+    M << m_ptsx[i], m_ptsy[i], 1;
+    Eigen::Vector3d V = T.inverse() * M;
+    v_ptsx[i] = V[0];
+    v_ptsy[i] = V[1];
+  }
+}
+
+// Include the latency to the model, default value is 100 ms
+void include_latency(Eigen::VectorXd& s, const double delta, const double acc, double latency = 0.1)
+{
+  double x = s[0];
+  double y = s[1];
+  double psi = s[2];
+  double v = s[3];
+
+  s[0] = x + v * cos(psi) * latency;
+  s[1] = y + v * sin(psi) * latency;
+  s[2] = psi + v / Lf * delta * latency;
+  s[3] = v + acc * latency;
+}
+
 int main()
 {
   uWS::Hub h;
@@ -99,15 +146,23 @@ int main()
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
-          
-//          Eigen::VectorXd eig_ptsx(ptsx.data());
-//          Eigen::VectorXd eig_ptsy(ptsy.data());
-          
+
+          //          Eigen::VectorXd eig_ptsx(ptsx.data());
+          //          Eigen::VectorXd eig_ptsy(ptsy.data());
+
           double m_px = j[1]["x"];
           double m_py = j[1]["y"];
-          double psi =  j[1]["psi"];
+          double psi = j[1]["psi"];
           double v = j[1]["speed"];
-          
+
+          // for latency
+          // In the simulator, "left" is negative and "right" is positive, while psi is measured the other way around.
+          double delta = j[1]["steering_angle"];
+          delta = -1 * delta;
+          double a = j[1]["throttle"];
+          double steer_value;
+          double throttle_value;
+          double steering_factor = 0.436332; // 25 deg = 0.436332 rad
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -115,79 +170,60 @@ int main()
           * Both are in between [-1, 1].
           *
           */
-          
-          // Create the transformation matrix for mapping 2 CS
+
+          // 1. Create the transformation matrix for mapping 2 CS
           // The transformation matrix consists rotation and translation to the vehicle position
-          Eigen::Matrix3d T;
-          
-          T << cos(psi), -sin(psi), m_px,
-               sin(psi), cos(psi), m_py,
-               0,0,1;
-          
-          //
           vector<double> next_x_vals(ptsx.size());
           vector<double> next_y_vals(ptsx.size());
-          
-          // Transform the waypoints from map to vehicle CS
-          unsigned int wp_len = ptsx.size();
-          
-          std::cout << "Length of ptsx: " << wp_len << std::endl;
-          //std::cout << "T: \n" << T << std::endl;
-          //std::cout << "T.inverse \n " << T.inverse() << std::endl;
-          
-          for (unsigned int i = 0; i < wp_len; i++ )
-          {
-            Eigen::Vector3d M;
-            M << ptsx[i], ptsy[i], 1;
-            Eigen::Vector3d V = T.inverse()*M;
-            next_x_vals[i] = V[0];
-            next_y_vals[i] = V[1];
-          }
-          Eigen::Vector3d Mp;
-          Mp << m_px, m_py, 1;
-          //Eigen::Vector3d Vp = T.inverse()*Mp;
-          //std::cout << "Vp " << Vp <<std::endl;
-          
-          // px, px in vehicle CS
-          //double v_px = Vp[0];
-          //double v_py = Vp[1];
-          
-          // convert vector double of vehicle CS to Eigen::Vector
+
+          transformMap2Vehicle({ m_px, m_py }, psi, ptsx, ptsy, next_x_vals, next_y_vals);
+
+          // convert vector double of vehicle CS to Eigen::Vector, due to polyfit function
           double* p_ptsx = &next_x_vals[0];
           double* p_ptsy = &next_y_vals[0];
-          Eigen::Map<Eigen::VectorXd> eig_ptsx(p_ptsx, wp_len);
-          Eigen::Map<Eigen::VectorXd> eig_ptsy(p_ptsy, wp_len);
-          
-          double steer_value;
-          double throttle_value;
-  
-          // 1. Fit the polynomial to the above points
+          Eigen::Map<Eigen::VectorXd> eig_ptsx(p_ptsx, ptsx.size());
+          Eigen::Map<Eigen::VectorXd> eig_ptsy(p_ptsy, ptsx.size());
+
+          // 2. Fit the above points of the waypoints as a polynomial line
           auto coeffs = polyfit(eig_ptsx, eig_ptsy, 3); // using third order to deal with the curve
 
-          // 2. calculate cost function CTE and EPSI
+          // 3. Calculate the Cross Track Error by evaluate the polynomial value of the current position f(0) in the
+          // vehicle CS
+          // this method is easier rather than to find a distance between a point and polynomial in the map CS
           double cte = polyeval(coeffs, 0.);
+          //  Calculate the orientation error
           double epsi = -atan(coeffs[1]);
-          
-          // 3. Update the controller based on the CTE
+          std::cout << " cte: " << cte << std::endl;
+          std::cout << " epsi: " << epsi << "( " << rad2deg(epsi) << " )" << std::endl;
+          // 4. Determine the vehicle model for MPC and set the initial state
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
-          
-          // MPC Solve return a vector of actuators delta, and acceleration
-          MpcSolution mpc_sol = mpc.Solve(state, coeffs);
-          double scale_factor = 0.436332;  //25 deg = 0.436332 rad
-          
-          //std::cout << "DEBUG3, rad: " <<vars[0]<<" " << vars[1]<<" " << vars[2]<<" " << vars[3]<<" " << vars[4]<<" " << vars[5]<< std::endl;
-          
-          //4. Assigning steervalue
-          // on the steering value scale, "left" is negative, while in the vehicle model, "left" is positive. 
-          // So when the optimizer outputs a positive delta angle, that means the car is supposed to steer left. 
-          // But in order to tell the simulator to steer left, you need to give it a negative value.
-          // The simulator takes as input values in [-1, 1], where -1 is equivalent to 25 degrees to the left and 1 is equivalent to 25 degrees to the right.
 
-          steer_value = -1 * mpc_sol.delta / scale_factor;
+          // 5. Findout the best cost function and parameter values for `N` and `dt`, see MPC.cpp
+
+          // 6. Include the 100 ms latency to the model
+          include_latency(state, delta, a);
+
+          // 7. Call the MPC Solve return vectors of the predicted points, actuators delta, and acceleration
+          MpcSolution mpc_sol = mpc.Solve(state, coeffs);
+
+          // std::cout << "DEBUG3, rad: " <<vars[0]<<" " << vars[1]<<" " << vars[2]<<" " << vars[3]<<" " << vars[4]<<" "
+          // << vars[5]<< std::endl;
+
+          // 8. Assigning the actuator values to the simulator
+          // on the steering value scale, "left" is negative, while in the vehicle model, "left" is positive.
+          // So when the optimizer outputs a positive delta angle, that means the car is supposed to steer left.
+          // But in order to tell the simulator to steer left, you need to give it a negative value.
+          // The simulator takes as input values in [-1, 1], where -1 is equivalent to 25 degrees to the left and 1 is
+          // equivalent to 25 degrees to the right.
+          steer_value = -1 * mpc_sol.delta / steering_factor;
           throttle_value = mpc_sol.a;
           // DEBUG
           // std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+          std::cout << "-----------------\n Cost:  " << mpc_sol.cost << std::endl;
+          std::cout << " Steer: " << rad2deg(-1. * mpc_sol.delta) * 25 << std::endl;
+          std::cout << " Trottle: " << throttle_value << "\n-----------------\n" << std::endl;
+
           std::cout << cte << "\t" << steer_value << "\t" << throttle_value << std::endl;
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -198,9 +234,9 @@ int main()
           // Display the MPC predicted trajectory
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
-          
-          msgJson["mpc_x"] = mpc_sol.xpts; //mpc_x_vals;
-          msgJson["mpc_y"] = mpc_sol.ypts; //mpc_y_vals;
+
+          msgJson["mpc_x"] = mpc_sol.xpts; // mpc_x_vals;
+          msgJson["mpc_y"] = mpc_sol.ypts; // mpc_y_vals;
 
           // Display the waypoints/reference line
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
