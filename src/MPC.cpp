@@ -7,12 +7,10 @@ using CppAD::AD;
 
 // YW: Set the timestep length and duration
 const size_t N = 10;
-const double dt = 0.1;
+const double dt = 0.05;
 
-
-// Both the reference cross track and orientation errors are 0.
 // The reference velocity is set to 40 mph.
-double ref_v = 40;
+double ref_v = 55;
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -141,7 +139,7 @@ MPC::~MPC()
 {
 }
 
-MpcSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
+MpcResult MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 {
   bool ok = true;
 
@@ -234,7 +232,7 @@ MpcSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   options += "Sparse  true        reverse\n";
   // NOTE: Currently the solver has a maximum time limit of 0.5 seconds.
   // Change this as you see fit.
-  options += "Numeric max_cpu_time          0.5\n";
+  options += "Numeric max_cpu_time          0.05\n";
 
   // place to return solution
   CppAD::ipopt::solve_result<Dvector> solution;
@@ -253,7 +251,7 @@ MpcSolution MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 
   // YW: Return the predicted positions and the first value of delta and accelerator
 
-  MpcSolution res;
+  MpcResult res;
   for(unsigned int i = 0; i < N - 1; i++) {
     res.xpts.push_back(solution.x[x_start + i]);
     res.ypts.push_back(solution.x[y_start + i]);

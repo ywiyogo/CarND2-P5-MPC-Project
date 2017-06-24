@@ -1552,7 +1552,7 @@
         <SingleFileCommand/>
         <MakefileGenerationCommand/>
         <ThirdPartyToolName>None</ThirdPartyToolName>
-        <WorkingDirectory>$(WorkspacePath)/../yudacity/CarND2-P5-MPC-Project</WorkingDirectory>
+        <WorkingDirectory>$(WorkspacePath)/../SelfDrivingCarND/Term2/CarND2-P5-MPC-Project</WorkingDirectory>
       </CustomBuild>
       <AdditionalRules>
         <CustomPostBuild/>

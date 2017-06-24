@@ -18,7 +18,7 @@ using namespace std;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-struct MpcSolution{
+struct MpcResult{
   vector<double> xpts;
   vector<double> ypts;
   vector<double> cte;
@@ -36,8 +36,8 @@ class MPC {
 
   // Solve the model given an initial state and polynomial coefficients.
   // Return the first actuatotions.
-  MpcSolution Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs);
-  
+  MpcResult Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs);
+
 };
 
 #endif /* MPC_H */

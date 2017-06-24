@@ -3,7 +3,16 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 ## Project Description
-In this project we will implement Model Predictive Control to drive the car around the track. This time however we're not given the cross track error (CTE), we'll have to calculate that ourself! Additionally, there's a 100 millisecond latency between actuations commands on top of the connection latency.
+In this project describes how to use Model Predictive Control to drive the car around the track in the Udacity simulator. This time however the cross track error (CTE) is unknown, thus we have to calculate that ourself! Additionally, there's a 100 millisecond latency between actuations commands on top of the connection latency.
+
+The provided data from the simulator are:
+
+* The waypoints of the road lane
+* The global position of the vehicle
+* The orientation of the vehicle
+* The speed of the vehicle in mph
+* The steering angle 
+* The throttle
 
 ## Implementation
 The step-by-step implementation of this project is:
@@ -16,6 +25,9 @@ The step-by-step implementation of this project is:
 7. Call the MPC Solve return vectors of the predicted points, actuators delta, and acceleration
 8. Assigning the actuator values to the simulator
 
+The result video can be seen in 
+
+![video1]
 
 ## Coordinate System Transformation
 
@@ -67,6 +79,19 @@ Due to the 100 millisecond latency between actuations commands on top of the con
     s[1] = y + v * sin(psi) * latency;
     s[2] = psi + v / Lf * delta * latency;
     s[3] = v + acc * latency;
+
+### Return Values
+The MPC class return a structure called `MpcResult`, which contains the next predicted waypoints, the cross-track-error, the orientation error, steering, throttle, and cost values.
+
+    struct MpcResult{
+      vector<double> xpts;
+      vector<double> ypts;
+      vector<double> cte;
+      vector<double> epsi;
+      double delta;
+      double a;
+      double cost;
+    };
 
 ---
 ## Dependencies
@@ -158,4 +183,5 @@ For this project, I use the codelite IDE. To import this project in codelite, pl
 
 [//]: # (Image References)
 
+[video1]: ./mpc_result_v50.mp4 "Result video with max speed 50 mph"
 [image1]: ./img/cte_calc.png "Calculating CTE"

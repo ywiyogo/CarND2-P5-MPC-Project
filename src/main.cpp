@@ -205,7 +205,7 @@ int main()
           include_latency(state, delta, a);
 
           // 7. Call the MPC Solve return vectors of the predicted points, actuators delta, and acceleration
-          MpcSolution mpc_sol = mpc.Solve(state, coeffs);
+          MpcResult mpc_sol = mpc.Solve(state, coeffs);
 
           // std::cout << "DEBUG3, rad: " <<vars[0]<<" " << vars[1]<<" " << vars[2]<<" " << vars[3]<<" " << vars[4]<<" "
           // << vars[5]<< std::endl;
@@ -221,7 +221,7 @@ int main()
           // DEBUG
           // std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
           std::cout << "-----------------\n Cost:  " << mpc_sol.cost << std::endl;
-          std::cout << " Steer: " << rad2deg(-1. * mpc_sol.delta) * 25 << std::endl;
+          std::cout << " Steer: " << rad2deg(-1. * mpc_sol.delta) << std::endl;
           std::cout << " Trottle: " << throttle_value << "\n-----------------\n" << std::endl;
 
           std::cout << cte << "\t" << steer_value << "\t" << throttle_value << std::endl;
