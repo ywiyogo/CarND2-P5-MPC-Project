@@ -25,6 +25,11 @@ The step-by-step implementation of this project is:
 7. Call the MPC Solve return vectors of the predicted points, actuators delta, and acceleration
 8. Assigning the actuator values to the simulator
 
+As discussed in this forum [thread](https://discussions.udacity.com/t/here-is-some-advice-about-steering-values/276487), there is an inconsistency of the steering values between the input data to the simulator and the output data from the simulator:
+
+> The simulator takes as input values in [-1, 1], where -1 is equivalent to 25 degrees to the left and 1 is equivalent to 25 degrees to the right.
+The simulator returns values in [-0.46332, +0.46332] radians, where -0.46332 is 25 degrees to the left and 0.46332 is 25 degrees to the right. - pierluigi.ferrari.
+
 The result video can be seen in this below animation or click to see in the original size.
 
 <p align="center">
@@ -89,6 +94,8 @@ Due to the 100 millisecond latency between actuations commands on top of the con
     s[1] = y + v * sin(psi) * latency;
     s[2] = psi + v / Lf * delta * latency;
     s[3] = v + acc * latency;
+
+The above functions are based on the discussion thread in the [Udacity forum](https://discussions.udacity.com/t/how-to-incorporate-latency-into-the-model/257391). The `delta` variable is taken from the simulator and multiplied by -1 due to the inconsistency of the simulator, see [above](#implementation).
 
 ### Return Values
 The MPC class return a structure called `MpcResult`, which contains the next predicted waypoints, the cross-track-error, the orientation error, steering, throttle, and cost values.
