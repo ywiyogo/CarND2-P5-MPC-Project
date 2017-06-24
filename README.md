@@ -25,11 +25,11 @@ The step-by-step implementation of this project is:
 7. Call the MPC Solve return vectors of the predicted points, actuators delta, and acceleration
 8. Assigning the actuator values to the simulator
 
-The result video can be seen in this below link
+The result video can be seen in this below animation or click to see in the original size.
 
 <p align="center">
 <a href="https://drive.google.com/open?id=0B2EMsm6nYzwWOTkyVE9CMFhTT0E
-" target="_blank"><img src="./img/thumbnail.png" 
+" target="_blank"><img src="./img/mpc_result_v50.gif" 
 alt="MPC result with max speed 50 mph" border="4" /></a>
 </p>
 
@@ -79,8 +79,8 @@ The cost function is depends to the length `N`. It is defined as a sum of many p
 
 I include two weights (`w_a` and `w_d`) for the acceleration and the heading direction to emphasize these parameters. The `w2` helps me to deal with the sharp curve.
 
-### Prediction Horizon
-The predicted horizon is defined by the time `T = N*dt`. A short horizon leads the prediction to be less accurate or even instability. A long time of prediction provides a better prediction, but it reduces the performance. I apply `N=10` and `dt=0.1` for my MPC in order to deal with the maximal velocity 40 mph.
+### Prediction Horizon, Timestep Length and Elapsed Duration
+The predicted horizon is defined by the time `T = N*dt`, where `N` is the timestep length and `dt` is the elapsed duration. A short horizon leads the prediction to be less accurate or even instability. A long time of prediction provides a better prediction, but it reduces the performance. I apply `N=10` and `dt=0.1` for my MPC in order to deal with the maximal velocity of 50 mph. A higher value of `N` such as 12 or 14 increase the computational process and leads to a delay which results an bad trajectory on curve road. A lower value of `N`, such as 7 leads to a oscillation of the vehicle. `N=5` leads MPC to predict the wrong trajectory to the opposite direction of the waypoints.
 
 ### Latency
 Due to the 100 millisecond latency between actuations commands on top of the connection latency, we need to incorporate this latency to our model. One way is to include this latency in the state before the state is passed to the `MPC::solve()`. The updated state is defined in the function `include_latency(Eigen::VectorXd& s, const double delta, const double acc, double latency = 0.1)` as:
