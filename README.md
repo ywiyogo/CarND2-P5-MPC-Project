@@ -25,16 +25,26 @@ The step-by-step implementation of this project is:
 7. Call the MPC Solve return vectors of the predicted points, actuators delta, and acceleration
 8. Assigning the actuator values to the simulator
 
-The result video can be seen in 
+The result video can be seen in this below link
 
-![video1]
+<p align="center">
+<a href="https://drive.google.com/open?id=0B2EMsm6nYzwWOTkyVE9CMFhTT0E
+" target="_blank"><img src="./img/thumbnail.png" 
+alt="MPC result with max speed 50 mph" border="4" /></a>
+</p>
 
 ## Coordinate System Transformation
-
-## Calculating the Cross Track Error (CTE) and orientation error
-The CTE can be calculated by finding the shortest distance between the given waypoints to the position of the vehicle. However, this method is rather complicated. Thus, we convert the polynomial in the vehicle coordinate system and calculate the distance by assigning 0 to the function. The y value of the `f(0)` represents the distance as the below illustration.
+Two coordinate systems are defined in the simulator environment: the global or map coordinate system and the vehicle coordinate system. These coordinate systems can be visualized as below figure:
 
 ![image1]
+
+In order to get a point in the vehicle coordinate system we can use a transformation matrix `T`. I defined the transformation matrix as 3x3 matrix that contains the rotation and the translation elements. The matrix takes the vehicle car `psi` and the vehicle position. Given a point in the map coordinate `M`, the transformation result of this point in the vehicle coordinate system `V` can be calculated as:
+
+    V = T.inverse().M
+
+## Calculating the Cross Track Error (CTE) and orientation error
+The CTE can be calculated by finding the shortest distance between the given waypoints to the position of the vehicle. However, this method is rather complicated. Thus, we convert the polynomial in the vehicle coordinate system and calculate the distance by assigning 0 to the function. The y value of the `f_poly(0)` represents the distance as the above illustration.
+
 
 ## MPC
 
@@ -73,7 +83,7 @@ I include two weights (`w_a` and `w_d`) for the acceleration and the heading dir
 The predicted horizon is defined by the time `T = N*dt`. A short horizon leads the prediction to be less accurate or even instability. A long time of prediction provides a better prediction, but it reduces the performance. I apply `N=10` and `dt=0.1` for my MPC in order to deal with the maximal velocity 40 mph.
 
 ### Latency
-Due to the 100 millisecond latency between actuations commands on top of the connection latency, we need to incorporate this latency to our model. One way is to include this latency in the state before the state is passed to the `MPC::solve()`. The updated state is defined in the function `include_latency` as:
+Due to the 100 millisecond latency between actuations commands on top of the connection latency, we need to incorporate this latency to our model. One way is to include this latency in the state before the state is passed to the `MPC::solve()`. The updated state is defined in the function `include_latency(Eigen::VectorXd& s, const double delta, const double acc, double latency = 0.1)` as:
 
     s[0] = x + v * cos(psi) * latency;
     s[1] = y + v * sin(psi) * latency;
@@ -185,3 +195,4 @@ For this project, I use the codelite IDE. To import this project in codelite, pl
 
 [video1]: ./mpc_result_v50.mp4 "Result video with max speed 50 mph"
 [image1]: ./img/cte_calc.png "Calculating CTE"
+[image2]: ./img/thumbnail.png "Calculating CTE"
