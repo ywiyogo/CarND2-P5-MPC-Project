@@ -13,7 +13,7 @@ The result video can be seen in this below animation or click to see in the orig
 alt="MPC final result" border="5" /></a>
 </p>
 
-For more details about the implementation, please read the [writeup](.writeup.md)
+For more details about the implementation, please read the [writeup](writeup.md)
 
 
 ---
