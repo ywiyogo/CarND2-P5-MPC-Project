@@ -5,21 +5,12 @@ Self-Driving Car Engineer Nanodegree Program
 ## Project Description
 In this project describes how to use Model Predictive Control to drive the car around the track in the Udacity simulator. This time however the cross track error (CTE) is unknown, thus we have to calculate that ourself! Additionally, there's a 100 millisecond latency between actuations commands on top of the connection latency.
 
-The provided data from the simulator are:
-
-* The waypoints of the road lane
-* The global position of the vehicle
-* The orientation of the vehicle
-* The speed of the vehicle in mph
-* The steering angle 
-* The throttle
-
 The result video can be seen in this below animation or click to see in the original size.
 
 <p align="center">
-<a href="https://drive.google.com/open?id=0B2EMsm6nYzwWOTkyVE9CMFhTT0E
-" target="_blank"><img src="./img/mpc_result_v50.gif" 
-alt="MPC result with max speed 50 mph" border="4" /></a>
+<a href="https://drive.google.com/open?id=0B2EMsm6nYzwWemVmVmx2dWlvak0
+" target="_blank"><img src="./img/mpc_result_N10dt005.gif" 
+alt="MPC final result" border="5" /></a>
 </p>
 
 For more details about the implementation, please read the [writeup](.writeup.md)
