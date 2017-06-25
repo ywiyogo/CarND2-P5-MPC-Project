@@ -22,7 +22,7 @@ def main(output):
     ax1.set_ylabel('CTE')
     ax1.plot(df['cte_N10_dt005_wd500'])
     ax1.plot(df['cte_N8_dt005_wd500'])
-    # ax1.plot(df['cte_N7_dt01_wd100'])
+    ax1.plot(df['cte_N10_dt005_wd500_ad'])
     ax1.legend(loc='upper right')
     ax1.grid(linestyle=":")
 
@@ -33,7 +33,7 @@ def main(output):
 
     ax2.plot(df['steering_N10_dt005_wd500'])
     ax2.plot(df['steering_N8_dt005_wd500'])
-    # ax2.plot(df['steering_N7_dt01_wd100'])
+    ax2.plot(df['steering_N10_dt005_wd500_ad'])
 
     ax2.legend(loc='upper right')
     ax2.grid(linestyle=":")
@@ -42,12 +42,9 @@ def main(output):
     ax3.set_title('Error psi', fontsize=18, fontweight='bold')
     ax3.set_xlabel('time')
     ax3.set_ylabel('epsi')
-    # ax2.plot(df['Steer_value(P:0.05;D:1)'])
-    # ax2.plot(df['Steer_value(P:0.05;D:2)'])
-    # ax2.plot(df['Steer_value(P:0.05;D:0.5)'])
     ax3.plot(df['epsi_N10_dt005_wd500'])
     ax3.plot(df['epsi_N8_dt005_wd500'])
-    # ax3.plot(df['epsi_N7_dt01_wd100'])
+    ax3.plot(df['epsi_N10_dt005_wd500_ad'])
 
     ax3.grid(linestyle=":")
     ax3.legend(loc='upper right')
@@ -58,7 +55,7 @@ def main(output):
     ax4.set_ylabel('epsi')
     ax4.plot(df['cost_N10_dt005_wd500'])
     ax4.plot(df['cost_N8_dt005_wd500'])
-    # ax4.plot(df['cost_N10_dt01_wd100'])
+    ax4.plot(df['cost_N10_dt005_wd500_ad'])
 
 
     ax4.grid(linestyle=":")

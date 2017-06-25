@@ -97,9 +97,6 @@ void transformMap2Vehicle(vector<double> v_pos_in_map,
     v_ptsx.resize(wp_len);
     v_ptsy.resize(wp_len);
   }
-  //std::cout << "Length of ptsx: " << wp_len << std::endl;
-  // std::cout << "T: \n" << T << std::endl;
-  // std::cout << "T.inverse \n " << T.inverse() << std::endl;
 
   for(unsigned int i = 0; i < wp_len; i++) {
     Eigen::Vector3d M;
@@ -124,7 +121,7 @@ void include_latency(Eigen::VectorXd& s, const double delta, const double acc, d
   s[1] = y + v * sin(psi) * latency;
   s[2] = psi + v / Lf * delta * latency;
   s[3] = v + acc * latency;
-  s[4] = cte + v*sin(epsi) *latency;
+  s[4] = cte + v * sin(epsi) * latency;
   s[5] = epsi + v / Lf * delta * latency;
 }
 
@@ -135,12 +132,13 @@ int main()
   // MPC is initialized here!
   MPC mpc;
 
+
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char* data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    //cout << sdata << endl;
+    // cout << sdata << endl;
     if(sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if(s != "") {
@@ -150,9 +148,6 @@ int main()
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
-
-          //          Eigen::VectorXd eig_ptsx(ptsx.data());
-          //          Eigen::VectorXd eig_ptsy(ptsy.data());
 
           double m_px = j[1]["x"];
           double m_py = j[1]["y"];
@@ -174,7 +169,9 @@ int main()
           * Both are in between [-1, 1].
           *
           */
-
+          // record start time for adaptive latency
+          auto start = std::chrono::system_clock::now();
+          
           // 1. Create the transformation matrix for mapping 2 CS
           // The transformation matrix consists rotation and translation to the vehicle position
           vector<double> next_x_vals(ptsx.size());
@@ -197,8 +194,8 @@ int main()
           double cte = polyeval(coeffs, 0.);
           //  Calculate the orientation error
           double epsi = -atan(coeffs[1]);
-          //std::cout << " cte: " << cte << std::endl;
-          //std::cout << " epsi: " << epsi << "( " << rad2deg(epsi) << " )" << std::endl;
+          // std::cout << " cte: " << cte << std::endl;
+          // std::cout << " epsi: " << epsi << "( " << rad2deg(epsi) << " )" << std::endl;
           // 4. Determine the vehicle model for MPC and set the initial state
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
@@ -206,13 +203,12 @@ int main()
           // 5. Findout the best cost function and parameter values for `N` and `dt`, see MPC.cpp
 
           // 6. Include the latency to the model by multiplied dt by 2
-          include_latency(state, delta, a);
+          
+          //cout << "Delay: " << mpc.prev_delay << endl;
+          include_latency(state, delta, a); //mpc.prev_delay
 
           // 7. Call the MPC Solve return vectors of the predicted points, actuators delta, and acceleration
           MpcResult mpc_sol = mpc.Solve(state, coeffs);
-
-          // std::cout << "DEBUG3, rad: " <<vars[0]<<" " << vars[1]<<" " << vars[2]<<" " << vars[3]<<" " << vars[4]<<" "
-          // << vars[5]<< std::endl;
 
           // 8. Assigning the actuator values to the simulator
           // on the steering value scale, "left" is negative, while in the vehicle model, "left" is positive.
@@ -224,11 +220,9 @@ int main()
           throttle_value = mpc_sol.a;
           // DEBUG
           // std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
-//          std::cout << "-----------------\n Cost:  " << mpc_sol.cost << std::endl;
-//          std::cout << " Steer: " << rad2deg(-1. * mpc_sol.delta) << std::endl;
-//          std::cout << " Trottle: " << throttle_value << "\n-----------------\n" << std::endl;
 
-          std::cout << cte << "\t" << steer_value << "\t" << epsi<< "\t"<< throttle_value << "\t" << mpc_sol.cost << std::endl;
+          std::cout << cte << "\t" << steer_value << "\t" << epsi << "\t" << throttle_value << "\t" << mpc_sol.cost
+                    << std::endl;
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
@@ -250,7 +244,7 @@ int main()
           msgJson["next_y"] = next_y_vals;
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          //std::cout << msg << std::endl;
+          // std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
@@ -260,7 +254,17 @@ int main()
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
+
+          auto end = std::chrono::system_clock::now();
+          std::chrono::duration<double> diff = end - start;
+          //save the delay for the next iteration
+          if (diff.count() > 0.15)
+            mpc.prev_delay = 0.15;
+          else
+            mpc.prev_delay = diff.count();
+          
           this_thread::sleep_for(chrono::milliseconds(100));
+          
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

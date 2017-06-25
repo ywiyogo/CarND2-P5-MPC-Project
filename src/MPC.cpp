@@ -134,7 +134,7 @@ class FG_eval
 //
 MPC::MPC()
 {
-
+  prev_delay = 0;
 }
 
 MPC::~MPC()
@@ -161,13 +161,13 @@ MpcResult MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   for(unsigned int i = 0; i < n_vars; i++) {
     vars[i] = 0;
   }
-
-  vars[x_start] = state[0];
-  vars[y_start] = state[1];
-  vars[psi_start] = state[2];
-  vars[v_start] = state[3];
-  vars[cte_start] = state[4];
-  vars[epsi_start] = state[5];
+//comment this code based on the suggestion after the review
+//  vars[x_start] = state[0];
+//  vars[y_start] = state[1];
+//  vars[psi_start] = state[2];
+//  vars[v_start] = state[3];
+//  vars[cte_start] = state[4];
+//  vars[epsi_start] = state[5];
 
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
