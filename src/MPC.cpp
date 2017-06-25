@@ -45,24 +45,26 @@ class FG_eval
     // fg[0] contains the total cost value
     // fg[1] contains the initial states
     // fg[1+t] contains the values based on the predicted model
-    double w_a = 5;
-    double w_d = 500;
+    const double w_e = 100;
+    const double w_d = 500;
+    const double w_ddiff = 500;
+    
     // Calculate the cost based on the reference states: cte, epsi, and velocity.
     for(unsigned int t = 0; t < N; t++) {
       fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
       fg[0] += CppAD::pow(vars[cte_start + t], 2);
-      fg[0] += CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += w_e * CppAD::pow(vars[epsi_start + t], 2);
     }
 
     // Minimize the use of actuators.
     for(unsigned int t = 0; t < N - 1; t++) {
-      fg[0] += CppAD::pow(vars[delta_start + t], 2);
-      fg[0] += w_a * CppAD::pow(vars[a_start + t], 2);
+      fg[0] += w_d* CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t], 2);
     }
 
     // Minimize the value gap between sequential actuations.
     for(unsigned int t = 0; t < N - 2; t++) {
-      fg[0] += w_d * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += w_ddiff * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
       fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
 
